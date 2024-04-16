@@ -20,7 +20,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ゲームウィンドウの作成
 	win = WinApp::GetInstance();
-	win->CreateGameWindow(L"LD2B_08_オノザワ_カズトシ_AL3");
+	win->CreateGameWindow(L"LD2B_02_オノザワ_カズトシ_AL3");
 	
 	// DirectX初期化処理
 	dxCommon = DirectXCommon::GetInstance();
@@ -91,6 +91,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		imguiManager->Draw();
 		// 描画終了
 		dxCommon->PostDraw();
+		
 	}
 
 	// 各種解放
