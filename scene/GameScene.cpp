@@ -30,7 +30,10 @@ void GameScene::Initialize() {
 	debugCamera_ = new DebugCamera(1280, 720);
 	AxisIndicator::GetInstance()->SetVisible(true);
 	AxisIndicator::GetInstance()->SetTargetViewProjection(&debugCamera_->GetViewProjection());
+	player_ = new Player;
+	player_->Initialize(model_, textureHandle_);
 
+	
 }
 
 void GameScene::Update() { 
@@ -60,6 +63,7 @@ void GameScene::Update() {
 	ImGui::ShowDemoWindow();
 
 #endif
+	player_->Update();
 }
 
 void GameScene::Draw() {
@@ -86,12 +90,14 @@ void GameScene::Draw() {
 	// 3Dオブジェクト描画前処理
 	Model::PreDraw(commandList);
 
+	player_->Draw(ViewProjection_);
+
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 	/// 3dモデル描画
 	
-	model_->Draw(WorldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+	//model_->Draw(WorldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
 
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {0, 10, 0}, {1.0f, 0.0f, 0.0f, 1.0f});
 
