@@ -49,7 +49,12 @@ void GameScene::Update() {
 
 	debugCamera_->Update();
 #ifdef _DEBUG
-	
+	if (input_->TriggerKey(DIK_0)) {
+		isDebugCameraaActive_ = true;
+	} else if (input_->TriggerKey(DIK_1)) {
+		isDebugCameraaActive_ = false;
+	}
+
 	ImGui::Begin("Debug1");
 	ImGui::Text("kamata Tarou %d %d %d", 200, 12, 31);
 	ImGui::End();
@@ -64,6 +69,15 @@ void GameScene::Update() {
 
 #endif
 	player_->Update();
+	if (isDebugCameraaActive_) {
+		debugCamera_->Update();
+		ViewProjection_.matView = debugCamera_->GetViewProjection().matView;
+		ViewProjection_.matProjection = debugCamera_->GetViewProjection().matProjection;
+
+		ViewProjection_.TransferMatrix();
+	} else {
+		ViewProjection_.UpdateMatrix();
+	}
 }
 
 void GameScene::Draw() {
