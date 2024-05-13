@@ -5,11 +5,14 @@
 #include <d3d12.h>
 #include <type_traits>
 #include <wrl.h>
+#include <cmath>
 
 // 定数バッファ用データ構造体
 struct ConstBufferDataWorldTransform {
 	Matrix4x4 matWorld; // ローカル → ワールド変換行列
 };
+
+
 
 /// <summary>
 /// ワールド変換データ
@@ -52,6 +55,18 @@ public:
 	/// <returns>定数バッファ</returns>
 	const Microsoft::WRL::ComPtr<ID3D12Resource>& GetConstBuffer() const { return constBuffer_; }
 
+	void UpdateMatrix();
+
+	
+	static Vector3 Transform(Vector3 vector, Matrix4x4 matrix);
+	static Matrix4x4 MAkeTranslateMatrix(Vector3& vector3);
+	static Matrix4x4 MAkeScaleMatrix(Vector3& vector3);
+	static Matrix4x4 MakeRotateXMatrix(Vector3& vector);
+	static Matrix4x4 MakeRotateYMatrix(Vector3& vector);
+	static Matrix4x4 MakeRotateZMatrix(Vector3& vector);
+	static Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
+	static Matrix4x4 MakeAffinMatrix(Vector3& S, Vector3& R, Vector3& T);
+
 private:
 	// 定数バッファ
 	Microsoft::WRL::ComPtr<ID3D12Resource> constBuffer_;
@@ -63,3 +78,5 @@ private:
 };
 
 static_assert(!std::is_copy_assignable_v<WorldTransform>);
+
+
