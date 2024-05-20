@@ -3,6 +3,7 @@
 #include "Model.h"
 #include "Input.h"
 #include "PlayerBullet.h"
+#include <list>
 
 class Player {
 public:
@@ -14,6 +15,10 @@ public:
 
 	void Attack();
 
+	~Player();
+
+	
+
 private:
 	WorldTransform worldTransform_;
 	Model* model_ = nullptr;
@@ -21,5 +26,6 @@ private:
 	Input* input_ = nullptr;
 	
 	PlayerBullet* bullet_ = nullptr;
+	std::list<PlayerBullet*> bullets;
 };
 

@@ -37,6 +37,9 @@ void Player::Update() {
 	if (bullet_) {
 		bullet_->Update();
 	}
+	for (PlayerBullet* bullet : bullets) {
+		bullet->Update();
+	}
 	
 	
 	//ImGui::Begin("Debug");
@@ -63,6 +66,10 @@ void Player::Draw(ViewProjection& viewprojection) {
 	if (bullet_) {
 		bullet_->Draw(viewprojection);
 	}
+	for (PlayerBullet* bulet_ : bullets) {
+	
+	bulet_->Draw(viewprojection);
+	}
 }
 
 void Player::Initialize(Model* model, uint32_t textureHandle) { 
@@ -75,9 +82,25 @@ void Player::Initialize(Model* model, uint32_t textureHandle) {
 
 void Player::Attack() { 
 	if (input_->PushKey(DIK_T)) {
+		const float kBulletSpeed = 1.0f;
+		Vector3 velocity(0, 0, kBulletSpeed);
+		velocity = WorldTransform::Transform(velocity, worldTransform_.matWorld_);
+
 		PlayerBullet* newBullet = new PlayerBullet();
-		newBullet->Initialize(model_, worldTransform_.translation_);
+		newBullet->Initialize(model_, worldTransform_.translation_,velocity);
 
 		bullet_ = newBullet;
+		bullets.push_back(newBullet);
+	}
+	/*if (bullet_) {
+		delete bullet_;
+		bullet_ = nullptr;
+	}*/
+	
+}
+
+Player::~Player() {
+	for (PlayerBullet* bulet_ : bullets) {
+		delete bulet_;
 	}
 }
