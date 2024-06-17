@@ -9,6 +9,11 @@
 #include "WorldTransform.h"
 #include "DebugCamera.h"
 #include "Player.h"
+#include "Enemy.h"
+#include "skydome.h"
+#include "RailCamera.h"
+#include <sstream>
+
 
 
 /// <summary>
@@ -42,12 +47,22 @@ public: // メンバ関数
 	/// </summary>
 	void Draw();
 
+	void LoadEnemyPopData();
+
+	void UpdateEnemyPopCommands();
+
+	
+	void CheckAllCollisions();
 	//スプライト
 	Sprite* sprite_ = nullptr;
 
 	WorldTransform WorldTransform_;
 
 	ViewProjection ViewProjection_;
+
+	void AddEnemyBullet(EnemyBullet* enemyBullet);
+
+	
 
 private: // メンバ変数 
 	//テクスチャハンドル
@@ -63,7 +78,15 @@ private: // メンバ変数
 
 	Player* player_ = nullptr;
 	bool isDebugCameraaActive_ = false;
+	Enemy* enemy_ = nullptr;
+	Model* modelskydome_ = nullptr;
+	skydome* skydome_ = nullptr;
+	RailCamera* railcamera_ = nullptr;
+	std::list<EnemyBullet*> enemybullets_;
+	std::stringstream enemyPopCommands;
 	
+	bool stopflag = false;
+	int stoptime = 0;
 
 	/// <summary>
 	/// ゲームシーン用

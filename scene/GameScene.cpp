@@ -4,6 +4,9 @@
 #include "PrimitiveDrawer.h"
 #include "AxisIndicator.h"
 #include <cassert>
+#include <fstream>
+//#include <string>
+
 
 
 GameScene::GameScene() {}
@@ -12,6 +15,9 @@ GameScene::~GameScene() {
 	delete sprite_; 
 	delete model_;
 	delete debugCamera_;
+	delete enemy_;
+	delete modelskydome_;
+	delete railcamera_;
 }
 
 void GameScene::Initialize() {
@@ -25,15 +31,24 @@ void GameScene::Initialize() {
 	ViewProjection_.Initialize();
 	soundDataHandle_ = audio_->LoadWave("fanfare.wav");
 	audio_->PlayWave(soundDataHandle_);
-	voiceHandle_ = audio_->PlayWave(soundDataHandle_, true);
+	voiceHandle_ = audio_->PlayWave(soundDataHandle_,true );
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&ViewProjection_);
 	debugCamera_ = new DebugCamera(1280, 720);
 	AxisIndicator::GetInstance()->SetVisible(true);
 	AxisIndicator::GetInstance()->SetTargetViewProjection(&debugCamera_->GetViewProjection());
 	player_ = new Player;
 	player_->Initialize(model_, textureHandle_);
+	enemy_ = new Enemy;
+	enemy_->Initialize(model_, textureHandle_,Vector3(0,0,0));
+	enemy_->SetPlayer(player_);
+	modelskydome_ = Model::CreateFromOBJ("skydome", true);
+	skydome_ = new skydome;
+	skydome_->Initalize(modelskydome_, textureHandle_);
+	railcamera_ = new RailCamera;
+	railcamera_->Initialize(ViewProjection_.rotation_);
 
-	
+	enemy_->SetGameScene(this);
+	//enemybullets_->Initialize()
 }
 
 void GameScene::Update() { 
@@ -69,6 +84,8 @@ void GameScene::Update() {
 
 #endif
 	player_->Update();
+	enemy_->Update();
+
 	if (isDebugCameraaActive_) {
 		debugCamera_->Update();
 		ViewProjection_.matView = debugCamera_->GetViewProjection().matView;
@@ -76,8 +93,12 @@ void GameScene::Update() {
 
 		ViewProjection_.TransferMatrix();
 	} else {
-		ViewProjection_.UpdateMatrix();
+		railcamera_->Update();
+		ViewProjection_.matView = railcamera_->GetViewProjection().matView;
+		ViewProjection_.matProjection = railcamera_->GetViewProjection().matProjection;
+		ViewProjection_.TransferMatrix();
 	}
+	CheckAllCollisions();
 }
 
 void GameScene::Draw() {
@@ -105,6 +126,9 @@ void GameScene::Draw() {
 	Model::PreDraw(commandList);
 
 	player_->Draw(ViewProjection_);
+	enemy_->Draw(ViewProjection_);
+	skydome_->Draw(ViewProjection_);
+	
 
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
@@ -131,4 +155,120 @@ void GameScene::Draw() {
 	Sprite::PostDraw();
 
 #pragma endregion
+}
+
+void GameScene::LoadEnemyPopData() { 
+	std::ifstream file;
+	file.open("./Resources/enemyPop.csv");
+	assert(file.is_open());
+
+	enemyPopCommands << file.rdbuf();
+
+	file.close();
+
+}
+
+void GameScene::UpdateEnemyPopCommands() {
+	std::string line;
+	while (getline(enemyPopCommands, line)) {
+		std::istringstream line_stream(line);
+		std::string word;
+
+		getline(line_stream, word, ',');
+
+		if (word.find("//") == 0) {
+			continue;
+		}
+
+		if (word.find("POP") == 0) {
+			getline(line_stream, word, ',');
+			float x = (float)std::atof(word.c_str());
+
+			getline(line_stream, word, ',');
+			float y = (float)std::atof(word.c_str());
+
+			getline(line_stream, word, ',');
+			float z = (float)std::atof(word.c_str());
+
+			enemy_->Initialize(model_, textureHandle_, Vector3(x, y, z));
+		} else if (word.find("WAIT") == 0) {
+			getline(line_stream, word, ',');
+
+			int32_t waitTime = atoi(word.c_str());
+			stopflag = true;
+			stoptime = waitTime;
+
+			break;
+			
+		}
+	}
+	if (stopflag) {
+		stoptime--;
+		if (stoptime <= 0) {
+			stopflag = false;
+		}
+		return;
+	}
+}
+
+void GameScene::CheckAllCollisions() { 
+	
+	Vector3 posA, posB;
+
+	const std::list<PlayerBullet*>& playerBullets = player_->GetBullets();
+	const std::list<EnemyBullet*>& enemyBullets = enemy_->GetBullets();
+
+	#pragma region
+	posA = player_->GetWorldPosition();
+
+	for (EnemyBullet* bullet : enemyBullets) {
+		posB = bullet->GetWorldPosition();
+
+		float length = sqrtf(
+		    ((posA.x - posB.x) * (posA.x - posB.x) + (posA.y - posB.y) * (posA.y - posB.y))  +
+		    (posA.z - posB.z) * (posA.z - posB.z));
+
+		if (length < 1) {
+			player_->OnCollision();
+
+			bullet->OnCollision();
+		}
+	}
+	#pragma endregion
+
+	
+
+	#pragma region
+	posA = enemy_->GetworldPosition();
+
+	for (PlayerBullet* bullet : playerBullets) {
+		posB = bullet->GetWorldPosition();
+
+		float length = sqrtf(((posA.x - posB.x) * (posA.x - posB.x) + (posA.y - posB.y) * (posA.y - posB.y)) + (posA.z - posB.z) * (posA.z - posB.z));
+
+		if (length < 1) {
+			enemy_->OnCollision();
+
+			bullet->OnCollision();
+		}
+	}
+	#pragma endregion
+
+	#pragma region
+	posA = player_->GetWorldPosition();
+	posB = enemy_->GetworldPosition();
+
+	float length = sqrtf(((posA.x - posB.x) * (posA.x - posB.x) + (posA.y - posB.y) * (posA.y - posB.y)) + (posA.z - posB.z) * (posA.z - posB.z));
+
+	if (length < 1) {
+		player_->OnCollision();
+
+		enemy_->OnCollision();
+	}
+	
+	#pragma endregion
+}
+
+void GameScene::AddEnemyBullet(EnemyBullet* enemyBullet) { 
+	enemybullets_.push_back(enemyBullet); 
 }
